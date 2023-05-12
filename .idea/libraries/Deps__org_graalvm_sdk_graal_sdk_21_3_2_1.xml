@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="Deps: org.graalvm.sdk/graal-sdk:21.3.2.1">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/org/graalvm/sdk/graal-sdk/21.3.2.1/graal-sdk-21.3.2.1.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
