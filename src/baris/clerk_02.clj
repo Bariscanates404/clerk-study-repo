@@ -1,4 +1,4 @@
-(ns mert.clerk-02)
+(ns baris.clerk-02)
 
 (defn foo
   "I don't do a whole lot."

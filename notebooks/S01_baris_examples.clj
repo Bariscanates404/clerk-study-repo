@@ -1,4 +1,4 @@
-(ns e07_baris_denemeler)
+(ns S01_baris_examples)
 
 (require '[nextjournal.clerk :as clerk])
 
