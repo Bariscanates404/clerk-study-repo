@@ -1,8 +1,10 @@
 (ns T01
-  (:require [nextjournal.clerk :as clerk]))
+  (:require
+    [clojure.string :as s]
+    [nextjournal.clerk :as clerk])
+  )
 
 (require '[datomic.client.api :as d])
-
 (def client (d/client {:server-type :dev-local
                        :storage-dir :mem
                        :system      "ci"}))
@@ -111,7 +113,6 @@
               [?e :product/label ?label]]
             db label)))
 (def db (d/db conn))
-(get-entity-id-by-label "lacoste")
 
 (defn get-label-by-entity-id [entity-id]
   (ffirst (d/q
@@ -121,7 +122,6 @@
               [?entity-id :product/label ?e]]
             db entity-id)))
 (def db (d/db conn))
-(get-label-by-entity-id 101155069755477)
 
 
 (def stock-data
@@ -145,7 +145,6 @@
               [?e :order/stock ?size]]
             db entity-id)))
 (def db (d/db conn))
-(stock-check (get-entity-id-by-label "lacoste"))
 
 
 ;gerçek kullanıcı testi, return true if real user otherwise false
@@ -157,7 +156,6 @@
                    [?e :user/id ?user-id]]
                  db user-id)))
   )
-(user-check-by-id 1)
 
 (defn get-user-entityid-by-userid [user-id]
   (ffirst (d/q
@@ -166,7 +164,7 @@
               :where
               [?e :user/id ?user-id]]
             db user-id)))
-(get-user-entityid-by-userid 1)
+
 
 (def db (d/db conn))                                        ;;refresh database
 (defn get-user-id-by-username [username]
@@ -177,7 +175,7 @@
               [?e :user/name ?username]
               [?e :user/id ?user-id]]
             db username)))
-(get-user-id-by-username "userdemo")
+
 
 (defn get-username-by-user-id [user-id]
   (ffirst (d/q
@@ -188,13 +186,16 @@
               [?e :user/name ?username]
               ]
             db user-id)))
-(get-username-by-user-id 2)
 
 
 
 ;cart system
 (def !my-cart
   (atom []))
+
+(identity @!my-cart)
+
+
 
 ;bu method ile eşyaları carta ekliyoruz, stock kontrolu yapıyoruz.
 (defn stock-check-and-put-in-cart [user-id entity-id order-size]
@@ -203,7 +204,9 @@
     (print "OUT OF STOCK
            Stock size is: " (stock-check entity-id))
     )
+
   )
+
 
 (stock-check-and-put-in-cart 2 (get-entity-id-by-label "mammut") 2)
 
@@ -215,8 +218,8 @@
 ;bu method ile satın alma işlemi tamamlanınca cart vectörünü tamamen temizliyoruz.
 (defn remove-all-elements-in-vec-and-return-it
   [coll]
-    (into (subvec coll 0 0))
-    )
+  (into (subvec coll 0 0))
+  )
 
 
 ;cartı temizleme methodunu burada kullanıyoruz.
@@ -224,20 +227,29 @@
 
 
 
+
+
+
 ;;working!
-(defn stock-check-and-sell-item [user-id entity-id order-size]
-  (if (>= (stock-check entity-id) order-size)
-    (if (user-check-by-id user-id)
-      ((d/transact conn {:tx-data [{:stock/product entity-id
-                                    :order/stock   (- (stock-check entity-id) order-size)}]})
-       (d/transact conn {:tx-data [{:order/product entity-id
-                                    :order/user    (get-user-entityid-by-userid user-id)
-                                    :order/size    order-size}]}))
+(defn stock-check-and-sell-item []
+  (for [[username label order-size] (for [len (range 0 (count @!my-cart))]
+                                      (get @!my-cart len)
+                                      )]
+    (if (>= (stock-check (get-entity-id-by-label label)) order-size)
+      (if (user-check-by-id (get-user-id-by-username username))
+        ((d/transact conn {:tx-data [{:stock/product (get-entity-id-by-label label)
+                                      :order/stock   (- (stock-check (get-entity-id-by-label label)) order-size)}]})
+         (d/transact conn {:tx-data [{:order/product (get-entity-id-by-label label)
+                                      :order/user    (get-user-entityid-by-userid (get-user-id-by-username username))
+                                      :order/size    order-size}]}))
+        (print "OUT OF STOCK!!
+    Stock size is: " (stock-check (get-entity-id-by-label label))))
       )
-    (print "OUT OF STOCK!!
-    Stock size is: " (stock-check entity-id)))
+    )
   (def db (d/db conn))                                      ;;refresh database
+  (swap! !my-cart remove-all-elements-in-vec-and-return-it)
   )
+(stock-check-and-sell-item)
 
 
 
@@ -277,9 +289,12 @@
 
 (stock-check (get-entity-id-by-label "mammut"))
 ;=> 6
-;(stock-check-and-sell-item (get-entity-id-by-label "mammut") 2 (get-user-id-by-username "bariscan"))
+(stock-check-and-put-in-cart (get-user-id-by-username "bariscan") (get-entity-id-by-label "mammut") 2)
+(stock-check-and-sell-item)
+;=> [["bariscan" "mammut" 2]]
 (stock-check (get-entity-id-by-label "mammut"))
 ;=> 4
+;=> []
 
 ;8. ## user return products page
 
@@ -296,7 +311,7 @@
 ;9. ## user buys 4 pieces of canada goose cabans
 (stock-check (get-entity-id-by-label "canada goose"))
 ;=> 8
-;(stock-check-and-sell-item (get-entity-id-by-label "canada goose") 2 (get-user-id-by-username "bariscan"))
+(stock-check-and-put-in-cart (get-user-id-by-username "bariscan") (get-entity-id-by-label "canada goose") 2)
 (stock-check (get-entity-id-by-label "canada goose"))
 ;=> 6
 
@@ -314,8 +329,24 @@
 ;=> 4
 
 ;11. ## user buys 5 pieces of husky sleeping bags while there are no enough stocks
-;(stock-check-and-sell-item (get-entity-id-by-label "husky") 5 (get-user-id-by-username "bariscan"))
+(stock-check-and-put-in-cart (get-user-id-by-username "bariscan") (get-entity-id-by-label "husky") 5)
 ;OUT OF STOCK!!
 ;    Stock size is:  4=> #'T01/db
 (stock-check (get-entity-id-by-label "husky"))
 ;=> 4
+
+;12. return products page and get put multiple items into the cart and then buy them.
+(stock-check-and-put-in-cart (get-user-id-by-username "bariscan") (get-entity-id-by-label "husky") 2)
+;=> [["bariscan" "husky" 2]]
+(stock-check-and-put-in-cart (get-user-id-by-username "bariscan") (get-entity-id-by-label "canada goose") 3)
+;=> [["bariscan" "husky" 2] ["bariscan" "canada goose" 3]]
+(stock-check-and-put-in-cart (get-user-id-by-username "bariscan") (get-entity-id-by-label "mammut") 1)
+;=> [["bariscan" "husky" 2] ["bariscan" "canada goose" 3] ["bariscan" "mammut" 1]]
+(stock-check-and-put-in-cart (get-user-id-by-username "bariscan") (get-entity-id-by-label "lacoste") 7)
+;=> [["bariscan" "husky" 2] ["bariscan" "canada goose" 3] ["bariscan" "mammut" 1] ["bariscan" "lacoste" 7]]
+
+
+(stock-check-and-sell-item)
+;=> []
+(identity @!my-cart)
+;=> []

@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="Deps: org.clj-commons/claypoole:1.2.2">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/org/clj-commons/claypoole/1.2.2/claypoole-1.2.2.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

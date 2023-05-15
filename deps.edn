@@ -3,7 +3,8 @@
         io.github.nextjournal/clerk {:mvn/version "0.13.842"}
         ; databases
         datascript/datascript {:mvn/version "1.3.12"}
-        com.datomic/dev-local {:mvn/version "1.0.243"}}
+        com.datomic/dev-local {:mvn/version "1.0.243"}
+        tupelo/tupelo {:mvn/version "23.05.04"}}
  :aliases
  {:build {:deps {io.github.seancorfield/build-clj
                  {:git/tag "v0.8.2" :git/sha "0ffdb4c"}}
