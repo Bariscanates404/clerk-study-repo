@@ -13,6 +13,7 @@
   ;; either call `clerk/show!` explicitly
 
   (clerk/show! "notebooks/S01_baris_examples.clj")
+  (clerk/show! "notebooks/S02_tupelo_library.clj")
   (clerk/show! "notebooks/T01.clj")
 
   ;end

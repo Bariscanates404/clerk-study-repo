@@ -3,6 +3,8 @@
 (require '[nextjournal.clerk :as clerk])
 
 
+
+
 ;; ## Clojure Data
 
 ;hiccup html element çalışması // w3schoolsdan destek alalım.
@@ -150,96 +152,3 @@
 (clerk/html [:div [:div.mb-3 "Do you like the clerk?"] [:div.custom-control.custom-radio.custom-control-inline [:input#yesRadio.custom-control-input {:type "radio" :name "like"}] [:label.custom-control-label {:for "yesRadio"} "Yes"]] [:div.custom-control.custom-radio.custom-control-inline [:input#impressiveRadio.custom-control-input {:type "radio" :name "like"}] [:label.custom-control-label {:for "impressiveRadio"} "Impressive"]] [:div.custom-control.disabled.custom-radio.custom-control-inline [:input#noRadio.custom-control-input.disabled {:type "radio" :disabled "" :name "like"}] [:label.custom-control-label.disabled {:for "noRadio"} "No"]]])
 
 
-
-(require '[datomic.client.api :as d])
-
-;; Memory storage
-(def client (d/client {:server-type :dev-local
-                       :storage-dir :mem
-                       :system      "ci"}))
-
-(d/create-database client {:db-name "db02"})
-
-(def conn (d/connect client {:db-name "db02"}))
-
-
-(def schema-1
-  [{:db/ident       :label
-    :db/valueType   :db.type/long
-    :db/unique      :db.unique/identity
-    :db/cardinality :db.cardinality/one}
-   {:db/ident       :type
-    :db/valueType   :db.type/string
-    :db/cardinality :db.cardinality/one}
-   {:db/ident       :model-no
-    :db/valueType   :db.type/string
-    :db/cardinality :db.cardinality/one}])
-
-(d/transact conn {:tx-data schema-1})
-
-@(def data
-   [{:label "lacoste"
-     :type       "urban clothing"
-     :model-no      "polo shirt"}
-    {:label "canada goose"
-     :type       "jackets"
-     :model-no      "caban"}
-    {:label "mammut"
-     :type       "boots"
-     :model-no      "hiking boots"}
-    {:label "husky"
-     :type       "sleeping bags"
-     :model-no      "arnapurna"}])
-;=> [{:ogrenci_id 101, :isim "Ali Niyazi", :sehir "Bursa"} {:ogrenci_id 102, :isim "Veli Şimşek", :sehir "Kütahya"}]
-
-(d/transact conn {:tx-data data})
-(def db (d/db conn))
-
-(d/q
-  '[:find ?e
-    :where
-    [?e :label "lacoste"]]
-  db)
-;=> [[79164837199948]]
-
-(d/q
-  '[:find ?i
-    :where
-    [?e :sehir "Bursa"]
-    [?e :isim ?i]]
-  db)
-;=> [["Ali Niyazi"]]
-
-(d/q
-  '[:find ?oid
-    :where
-    [?e :sehir "Bursa"]
-    [?e :ogrenci_id ?oid]]
-  db)
-;=> [[101]]
-
-(d/q
-  '[:find ?oid
-    :where
-    [?e :sehir "Bursa"]
-    [?e :ogrenci_id ?oid]]
-  db)
-
-; sehir değeri Bursa olan entitylerin tüm atributlarını görmek istiyorum
-(d/q
-  '[:find ?a
-    :where
-    [?e :sehir "Bursa"]
-    [?e ?a _]]
-  db)
-;=> [[73] [74] [75]]
-
-
-(d/q
-  '[:find ?aname
-    :where
-    [?e :sehir "Bursa"]
-    [?e ?a _]
-    [?a :db/ident ?aname]]
-  db)
-;=> [[:isim] [:ogrenci_id] [:sehir]]
