@@ -106,6 +106,7 @@
 (d/transact conn {:tx-data user-data})
 
 
+
 ;; ## ---------------------------------------------------------------------------------------------------------------
 ;1. ## Launch browser
 ;2. ## Navigate to url 'http://localhost:7779/'
@@ -129,14 +130,16 @@
 
 
 ;7. ## user puts a mammut boot in the cart and completes the purchase function
+(def db (d/db conn))                                        ;;refresh database
 (r/put-item-in-cart db "bariscan" "mammut" 3)
 ;=> [["bariscan" "mammut" 3]]
+(r/stock-check-by-label db "mammut")
 (r/sell-all-items-in-cart db conn)
 ;=> []
 ;8. ## user return products page
 ;   ## products page!
 
-(r/show-all-products db)
+
 
 ;9. ## user buys 4 pieces of canada goose cabans
 (r/put-item-in-cart db "bariscan" "canada goose" 4)

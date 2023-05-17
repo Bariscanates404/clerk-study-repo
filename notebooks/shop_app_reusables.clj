@@ -64,7 +64,7 @@
   (atom [])
   )
 
-(defn cart-info [cart]
+#_(defn cart-info [cart]
   (clerk/html [:table
                [:tr [:th "User"] [:th "Product"] [:th "Stock Amount"]]
                (for [[user product stock-amount] cart]
@@ -120,12 +120,14 @@
          (d/transact conn {:tx-data [{:order/product (get-entity-id-by-label db label)
                                       :order/user    (get-user-entity-id-by-userid db (get-user-id-by-username db username))
                                       :order/size    order-size}]}))
+        (print "UNKNOWN USER!!")
+        )
         (print "OUT OF STOCK!!
-    Stock size is: " (stock-check-by-label db label)))
+    Stock size is: " (stock-check-by-label db label))
       )
     )
-  (def db (d/db conn))                                      ;;refresh database
   (swap! !my-cart remove-all-elements-in-cart)
+  (def db (d/db conn))                                      ;;refresh database
   )
 
 
