@@ -85,13 +85,13 @@
 (d/transact conn {:tx-data product-data})
 
 (def stock-data
-  [{:stock/product (r/get-entity-id-by-label "lacoste")
+  [{:stock/product (r/get-entity-id-by-label db "lacoste")
     :stock/amount  10}
-   {:stock/product (r/get-entity-id-by-label "canada goose")
+   {:stock/product (r/get-entity-id-by-label db  "canada goose")
     :stock/amount  8}
-   {:stock/product (r/get-entity-id-by-label "mammut")
+   {:stock/product (r/get-entity-id-by-label db "mammut")
     :stock/amount  6}
-   {:stock/product (r/get-entity-id-by-label "husky")
+   {:stock/product (r/get-entity-id-by-label db "husky")
     :stock/amount  4}])
 (d/transact conn {:tx-data stock-data})
 
@@ -106,8 +106,6 @@
 (d/transact conn {:tx-data user-data})
 
 
-
-
 ;; ## ---------------------------------------------------------------------------------------------------------------
 ;1. ## Launch browser
 ;2. ## Navigate to url 'http://localhost:7779/'
@@ -120,82 +118,55 @@
                                         [:div#userEmail-wrapper.mt-2.row [:div.col-md-3.col-sm-12 [:label#userEmail-label.form-label "Password"]] [:div.col-md-9.col-sm-12 [:input#userEmail.mr-sm-2.form-control {:autocomplete "off" :placeholder "Password" :type "Password"}]]]
                                         [:div.mt-2.justify-content-end.row [:div.text-right.col-md-2.col-sm-12 [:button#submit.btn.btn-primary {:type "button"} "Submit"]]] [:div#output.mt-4.row [:div.undefined.col-md-12.col-sm-12]]]])
 
-(def user-data2
-  [{:user/id       3
-    :user/name     "bariscan"
-    :user/password "123456"}
-   ])
-(d/transact conn {:tx-data user-data2})
-(def db (d/db conn))                                        ;;refresh database
 
+(r/add-new-user db conn  3 "bariscan" "123456")
 
 ;5. ## user clicks products page to see all products
-(clerk/html [:button {:type "button"} "Products"])
-
+;   ## products page!
 ;6. ## user sees all of the products
+(r/show-all-products db)
 
 
-
-
-
-(identity show-all-products)
 
 ;7. ## user puts a mammut boot in the cart and completes the purchase function
-
-(stock-check-by-label "mammut")
-;=> 6
-(put-item-in-cart (get-user-id-by-username "bariscan") (get-entity-id-by-label "mammut") 2)
-(put-item-in-cart "userdemo" "husky" 3)
-
-(sell-all-items-in-cart)
-;=> [["bariscan" "mammut" 2]]
-;=> 4
+(r/put-item-in-cart db "bariscan" "mammut" 3)
+;=> [["bariscan" "mammut" 3]]
+(r/sell-all-items-in-cart db conn)
 ;=> []
-
 ;8. ## user return products page
+;   ## products page!
 
-(identity show-all-products)
-
+(r/show-all-products db)
 
 ;9. ## user buys 4 pieces of canada goose cabans
-
-(put-item-in-cart (get-user-id-by-username "bariscan") (get-entity-id-by-label "canada goose") 2)
-(put-item-in-cart "userdemo" "husky" 3)
-
-
-(identity show-all-products)
+(r/put-item-in-cart db "bariscan" "canada goose" 4)
+(r/sell-all-items-in-cart db conn)
 
 
 ;10. ## user return products page
-
-(identity show-all-products)
+;   ## products page!
+(r/show-all-products db)
 ;=> 4
 
 ;11. ## user buys 5 pieces of husky sleeping bags while there are no enough stocks
-(put-item-in-cart (get-user-id-by-username "bariscan") (get-entity-id-by-label "husky") 5)
-(put-item-in-cart "userdemo" "husky" 3)
-
+(r/put-item-in-cart db "bariscan" "husky" 5)
 ;OUT OF STOCK!!
 ;    Stock size is:  4=> #'T01/db
 ;=> 4
-(identity show-all-products)
+
+(r/show-all-products db)
 
 ;12. return products page and get put multiple items into the cart and then buy them.
-(put-item-in-cart (get-user-id-by-username "bariscan") (get-entity-id-by-label "husky") 2)
-(put-item-in-cart "userdemo" "husky" 3)
 
-;=> [["bariscan" "husky" 2]]
-(put-item-in-cart (get-user-id-by-username "bariscan") (get-entity-id-by-label "canada goose") 3)
-;=> [["bariscan" "husky" 2] ["bariscan" "canada goose" 3]]
-(put-item-in-cart (get-user-id-by-username "bariscan") (get-entity-id-by-label "mammut") 1)
-;=> [["bariscan" "husky" 2] ["bariscan" "canada goose" 3] ["bariscan" "mammut" 1]]
-(put-item-in-cart (get-user-id-by-username "bariscan") (get-entity-id-by-label "lacoste") 7)
-;=> [["bariscan" "husky" 2] ["bariscan" "canada goose" 3] ["bariscan" "mammut" 1] ["bariscan" "lacoste" 7]]
+(r/put-item-in-cart db "bariscan" "husky" 2)
+(r/put-item-in-cart db "bariscan" "canada goose" 3)
+(r/put-item-in-cart db "bariscan" "mammut" 1)
+(r/put-item-in-cart db "bariscan" "lacoste" 7)
 
-(identity show-all-products)
 
-(sell-all-items-in-cart)
-;=> []
-(identity @!my-cart)
+(r/show-all-products db)
+
+(r/sell-all-items-in-cart db conn)
 ;=> []
 
+(r/show-all-products db)

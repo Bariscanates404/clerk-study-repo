@@ -1,44 +1,32 @@
 (ns shop_app_reusables
-  (:require [T01 :as app]))
+  (:require     [nextjournal.clerk :as clerk]
+                [datomic.client.api :as d]))
 
 
-
-
-(defn get-entity-id-by-label [label]
+;;queries
+(defn get-entity-id-by-label [db label]
   (ffirst (d/q
             '[:find ?e
               :in $ ?label
               :where
               [?e :product/label ?label]]
             db label)))
-(app/db)
-
-(defn get-label-by-entity-id [entity-id]
+(defn get-label-by-entity-id [db entity-id]
   (ffirst (d/q
             '[:find ?e
               :in $ ?entity-id
               :where
               [?entity-id :product/label ?e]]
             db entity-id)))
-(def db (d/db conn))
-
-
-
-
-(defn stock-check-by-label [label]
+(defn stock-check-by-label [db label]
   (ffirst (d/q
             '[:find ?size
               :in $ ?entity-id
               :where
               [?e :stock/product ?entity-id]
               [?e :stock/amount ?size]]
-            db (get-entity-id-by-label label))))
-
-(def db (d/db conn))
-
-
-;gerçek kullanıcı testi, return true if real user otherwise false
-(defn user-validation-check-by-id [user-id]
+            db (get-entity-id-by-label db label))))
+(defn user-validation-check-by-id [db user-id]
   (not (empty? (d/q
                  '[:find ?e
                    :in $ ?user-id
@@ -46,18 +34,14 @@
                    [?e :user/id ?user-id]]
                  db user-id)))
   )
-
-(defn get-user-entity-id-by-userid [user-id]
+(defn get-user-entity-id-by-userid [db user-id]
   (ffirst (d/q
             '[:find ?e
               :in $ ?user-id
               :where
               [?e :user/id ?user-id]]
             db user-id)))
-
-
-(def db (d/db conn))                                        ;;refresh database
-(defn get-user-id-by-username [username]
+(defn get-user-id-by-username [db username]
   (ffirst (d/q
             '[:find ?user-id
               :in $ ?username
@@ -65,9 +49,7 @@
               [?e :user/name ?username]
               [?e :user/id ?user-id]]
             db username)))
-
-
-(defn get-username-by-user-id [user-id]
+(defn get-username-by-user-id [db user-id]
   (ffirst (d/q
             '[:find ?username
               :in $ ?user-id
@@ -77,26 +59,7 @@
               ]
             db user-id)))
 
-(def show-all-products
-  (clerk/html [:table
-               [:tr [:th "Product"] [:th "Stock Amount"]]
-               (for [[stock-amount product] (d/q
-                                              '[:find ?name ?p
-                                                :where
-                                                [?e :stock/amount ?name]
-                                                [?e :stock/product ?p]]
-                                              db)]
-                 [:tr [:td (get-label-by-entity-id product)] [:td stock-amount]]
-
-                 )
-               ]
-              )
-  )
-
-
-
-
-;cart system
+;;cart system
 (def !my-cart
   (atom [])
   )
@@ -111,41 +74,58 @@
               )
   )
 
-;bu method ile eşyaları carta ekliyoruz, stock kontrolu yapıyoruz.
-(defn put-item-in-cart [username label order-size]
-  (if (>= (stock-check-by-label label) order-size)
-    (swap! !my-cart conj [username label order-size])
-    (print "OUT OF STOCK
-           Stock size is: " (stock-check-by-label label))
-    )
+(defn show-all-products [db]
+  (clerk/html [:table
+               [:tr [:th "Product"] [:th "Stock Amount"]]
+               (for [[stock-amount product] (d/q
+                                              '[:find ?name ?p
+                                                :where
+                                                [?e :stock/amount ?name]
+                                                [?e :stock/product ?p]]
+                                              db)]
+                 [:tr [:td (get-label-by-entity-id db product)] [:td stock-amount]]
+
+                 )
+               ]
+              )
   )
 
-
-;bu method ile satın alma işlemi tamamlanınca cart vectörünü tamamen temizliyoruz.
+;;functionalities
+(defn add-new-user [db conn user-id username password-string]
+  (d/transact conn [{:user/id       user-id
+                     :user/name     username
+                     :user/password password-string}
+                    ])
+  (def db (d/db conn))
+  )
+(defn put-item-in-cart [db username label order-size]
+  (if (>= (stock-check-by-label db label) order-size)
+    (swap! !my-cart conj [username label order-size])
+    (print "OUT OF STOCK
+           Stock size is: " (stock-check-by-label db label))
+    )
+  )
 (defn remove-all-elements-in-cart
   [coll]
   (into (subvec coll 0 0))
   )
-
-;;working!
-(defn sell-all-items-in-cart []
+(defn sell-all-items-in-cart [db conn]
   (for [[username label order-size] (for [len (range 0 (count @!my-cart))]
                                       (get @!my-cart len)
                                       )]
-    (if (>= (stock-check-by-label label) order-size)
-      (if (user-validation-check-by-id (get-user-id-by-username username))
-        ((d/transact conn {:tx-data [{:stock/product (get-entity-id-by-label label)
-                                      :stock/amount  (- (stock-check-by-label label) order-size)}]})
-         (d/transact conn {:tx-data [{:order/product (get-entity-id-by-label label)
-                                      :order/user    (get-user-entity-id-by-userid (get-user-id-by-username username))
+    (if (>= (stock-check-by-label db label) order-size)
+      (if (user-validation-check-by-id db (get-user-id-by-username db username))
+        ((d/transact conn {:tx-data [{:stock/product (get-entity-id-by-label db label)
+                                      :stock/amount  (- (stock-check-by-label db label) order-size)}]})
+         (d/transact conn {:tx-data [{:order/product (get-entity-id-by-label db label)
+                                      :order/user    (get-user-entity-id-by-userid db (get-user-id-by-username db username))
                                       :order/size    order-size}]}))
         (print "OUT OF STOCK!!
-    Stock size is: " (stock-check-by-label label)))
+    Stock size is: " (stock-check-by-label db label)))
       )
     )
   (def db (d/db conn))                                      ;;refresh database
   (swap! !my-cart remove-all-elements-in-cart)
   )
-(sell-all-items-in-cart)
 
 
