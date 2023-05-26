@@ -22,27 +22,6 @@
 (d/transact conn {:tx-data db-schema})
 (def db (d/db conn))                                        ;;refresh database
 
-(def function-data
-  [{:function/name "String"
-    :function/sum  0}
-   {:function/name "int"
-    :function/sum  0}
-   {:function/name "boolean"
-    :function/sum  0}
-   ])
-(d/transact conn {:tx-data function-data})
-(def db (d/db conn))                                        ;;refresh database
-
-(def vector-0f-texts (->>
-                       (clojure.java.io/file "/Users/bariscanates/prj/baris/UnityVerseAcJaca/src")
-                       (file-seq)
-                       (filter (fn [^File file]
-                                 (not (.isDirectory file))))
-                       (mapv (fn [^File file]
-                               {:name    (.getName file)
-                                :content (slurp file)})))
-  )
-
 (def type-vec ["accessor" "aclone" "add-classpath" "add-tap" "add-watch" "agent" "agent-error" "agent-errors" "aget" "alength" "alias" "all-ns" "alter" "alter-meta!" "alter-var-root" "amap" "ancestors" "and" "any?" "apply" "areduce" "array-map" "as->" "aset" "aset-boolean" "aset-byte" "aset-char" "aset-double" "aset-float" "aset-int" "aset-short" "assert" "assoc" "assoc!" "assoc-in" "associative?" "atom" "await" "await-for" "await1"
                "bases" "bean" "bigdec" "bigint" "biginteger" "binding" "bit-and" "bit-and-not" "bit-clear" "bit-flip" "bit-not" "bit-or" "bit-set" "bit-shift-left" "bit-shift-right" "bit-test" "bit-xor" "boolean" "boolean-array" "bytes" "bytes?"
                "case" "cast" "cat" "catch" "char" "char-array" "char-escape-string" "char-name-string" "char?" "chars" "chunk" "chunk-append" "chunk-buffer" "chunk-cons" "chunk-first" "chunk-rest" "chunk-next" "chunked-seq?" "class" "class?" "clear-agent-errors" "clojure-version" "coll?" "comment" "commute" "comp" "comparator" "compare" "compare-and-set!" "compile" "complement" "completing" "concat" "cond" "cond->" "cond->>" "condp" "conj" "conj!" "cons" "constantly" "construct-proxy" "contains?" "count" "counted?" "create-ns" "create-struct" "cycle"
@@ -69,17 +48,45 @@
                "val" "vals" "var" "var-get" "var-set" "var?" "vary-meta" "vec" "vector" "vector-of" "vector?" "volatile!" "volatile?" "vreset!" "vswap!"
                "when" "when-first" "when-let" "when-not" "when-some" "while" "with-bindings*" "with-bindings" "with-in-str" "with-local-vars" "with-meta" "with-open" "with-out-str" "with-local-vars" "with-meta" "with-open" "with-precision" "with-redefs-fn" "with-redefs"
                "xml-seq" "zero?" "zipmap"])
-(def !type
+
+(defn add-a-type-into-schema "adds just one item in functions schema" [type-str]
+  (d/transact conn {:tx-data [{:function/name type-str
+                               :function/sum  0
+                               }
+                              ]})
+  (def db (d/db conn))
+  )
+
+(defn create-type-schema "adds multiple items in functions schema" [type-vec]
+  (doall (for [len (range 0 (count type-vec))]
+           (add-a-type-into-schema (get type-vec len))
+           )
+         )
+  )
+(create-type-schema type-vec)
+
+
+(def vector-0f-texts "gets all the project files and return them as map of strings"
+  (->>
+    (clojure.java.io/file "/Users/bariscanates/study/clj")
+    (file-seq)
+    (filter (fn [^File file]
+              (not (.isDirectory file))))
+    (mapv (fn [^File file]
+            {:name    (.getName file)
+             :content (slurp file)})))
+  )
+
+(def !type "helps to run increase-usages function inside of main functions for loop"
   (atom ["String"])
   )
 
-;text içerisinde arama yapan fonksiyon
-(defn f [text]
+(defn f "searchs the given value(inside !type atom) inside given text(vector-0f-texts)"
+  [text]
   (count (re-seq (re-pattern (get @!type 0)) text)))
 
-(reduce + (into [] (map f (map :content vector-0f-texts))))
-
-(defn function-usages [func-name]
+(defn function-usages "shows  the number of given functions usages which are saved db until now on"
+  [func-name]
   (ffirst (d/q
             '[:find ?name
               :in $ ?func-name
@@ -89,29 +96,16 @@
             db func-name))
   )
 
-(defn increase-usages [func-name-string func-usage-to-sum]
+(defn increase-usages  "counts the usage sum of given function name and writes into the db the sum of old and new usage numbers"
+  [func-name-string func-usage-to-sum]
   (def db (d/db conn))                                      ;;refresh database
   (d/transact conn {:tx-data [{:function/name func-name-string
                                :function/sum  (+ (function-usages func-name-string) func-usage-to-sum)}
                               ]})
   (def db (d/db conn))                                      ;;refresh database
   )
-
-(increase-usages "String" 11)
-(def db (d/db conn))
-(function-usages "String")
-(function-usages "int")
-(function-usages "boolean")
-
-(d/q
-  '[:find ?name
-    :in $ ?func-name
-    :where
-    [?e :function/name ?func-name]
-    [?e :function/sum ?name]]
-  db "int")
-
-(defn main-function [type-coll]
+(defn main-function "checks all of given function(by function type vector) usages into given project and writes their sum into db"
+  [type-coll]
   (doall (for [len (range 0 (count type-coll))]
            (do
              (reset! !type [(get type-vec len)])
@@ -122,6 +116,12 @@
   )
 
 (main-function type-vec)
+
+(function-usages "map")
+;[(< 3000 ?size)]
+
+
+
 
 
 

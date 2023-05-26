@@ -37,6 +37,7 @@
 (def stock-schema
   [{:db/ident       :stock/product
     :db/valueType   :db.type/ref
+    :db/unique      :db.unique/identity
     :db/cardinality :db.cardinality/one}
    {:db/ident       :stock/amount
     :db/valueType   :db.type/long
