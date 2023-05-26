@@ -1,4 +1,4 @@
-(ns db_unique_solution)
+(ns db_unique_problem)
 
 (require '[datomic.client.api :as d])
 (def client (d/client {:server-type :dev-local
@@ -19,23 +19,23 @@
 (d/transact conn {:tx-data db-schema})
 (def db (d/db conn))                                        ;;refresh database
 
-(def item-schema
+(def item1
   [{:item/name "String"
     :item/sum  0}
    ])
-(d/transact conn {:tx-data item-schema})
+(d/transact conn {:tx-data item1})
 (def db (d/db conn))                                        ;;refresh database
 
-(def product-data
+(def item2
   [{:item/name    "String"
-    :item/sum 0}])
-(d/transact conn {:tx-data product-data})
+    :item/sum 10}])
+(d/transact conn {:tx-data item2})
 (def db (d/db conn))
 
 (d/q
-  '[:find ?name
-    :in $ ?func-name
+  '[:find ?sum
+    :in $ ?name
     :where
-    [?e :item/name ?func-name]
-    [?e :item/sum ?name]]
+    [?e :item/name ?name]
+    [?e :item/sum ?sum]]
   db "String")
