@@ -31,6 +31,8 @@
     :db/valueType   :db.type/string
     :db/cardinality :db.cardinality/one}])
 (d/transact conn {:tx-data db-schema})
+(def db (d/db conn))                                        ;;refresh database
+
 
 (def stock-schema
   [{:db/ident       :stock/product
@@ -40,6 +42,8 @@
     :db/valueType   :db.type/long
     :db/cardinality :db.cardinality/one}])
 (d/transact conn {:tx-data stock-schema})
+(def db (d/db conn))                                        ;;refresh database
+
 
 (def order-schema
   [{:db/ident       :order/product
@@ -52,6 +56,8 @@
     :db/valueType   :db.type/long
     :db/cardinality :db.cardinality/one}])
 (d/transact conn {:tx-data order-schema})
+(def db (d/db conn))                                        ;;refresh database
+
 
 (def user-schema
   [{:db/ident       :user/id
@@ -64,6 +70,8 @@
     :db/valueType   :db.type/string
     :db/cardinality :db.cardinality/one}])
 (d/transact conn {:tx-data user-schema})
+(def db (d/db conn))                                        ;;refresh database
+
 
 (def product-data
   [{:product/id       100
@@ -83,17 +91,19 @@
     :product/type     "sleeping bags"
     :product/model-no "arnapurna"}])
 (d/transact conn {:tx-data product-data})
+(def db (d/db conn))                                        ;;refresh database
 
 (def stock-data
   [{:stock/product (r/get-entity-id-by-label db "lacoste")
     :stock/amount  10}
-   {:stock/product (r/get-entity-id-by-label db  "canada goose")
+   {:stock/product (r/get-entity-id-by-label db "canada goose")
     :stock/amount  8}
    {:stock/product (r/get-entity-id-by-label db "mammut")
     :stock/amount  6}
    {:stock/product (r/get-entity-id-by-label db "husky")
     :stock/amount  4}])
 (d/transact conn {:tx-data stock-data})
+
 
 (def user-data
   [{:user/id       1
@@ -104,7 +114,6 @@
     :user/password "123456"}
    ])
 (d/transact conn {:tx-data user-data})
-
 
 
 ;; ## ---------------------------------------------------------------------------------------------------------------
@@ -120,56 +129,45 @@
                                         [:div.mt-2.justify-content-end.row [:div.text-right.col-md-2.col-sm-12 [:button#submit.btn.btn-primary {:type "button"} "Submit"]]] [:div#output.mt-4.row [:div.undefined.col-md-12.col-sm-12]]]])
 
 
-(r/add-new-user db conn  3 "bariscan" "123456")
+(r/add-new-user db conn 3 "bariscan" "123456")
 
 ;5. ## user clicks products page to see all products
 ;   ## products page!
 ;6. ## user sees all of the products
+
 (r/show-all-products db)
 
-
-
+(r/get-entity-id-by-label db "husky")
+(d/q
+  '[:find ?name ?p
+    :where
+    [?e :stock/product ?p]
+    [?e :stock/amount ?name]]
+  db)
+(d/q
+  '[:find ?size
+    :in $ ?entity-id
+    :where
+    [?e :stock/product ?entity-id]
+    [?e :stock/amount ?size]]
+  db (r/get-entity-id-by-label db "mammut"))
+(identity r/cart-info)
 ;7. ## user puts a mammut boot in the cart and completes the purchase function
-(def db (d/db conn))                                        ;;refresh database
-(r/put-item-in-cart db "bariscan" "mammut" 3)
+(r/put-item-in-cart db "bariscan" "mammut" 1)
+(r/put-item-in-cart db "bariscan" "husky" 1)
 ;=> [["bariscan" "mammut" 3]]
 (r/stock-check-by-label db "mammut")
 (r/sell-all-items-in-cart db conn)
 ;=> []
+
+
+
+(def db (d/db conn))                                        ;;refresh database
+(r/stock-check-by-label db "mammut")
+
+
 ;8. ## user return products page
 ;   ## products page!
 
 
 
-;9. ## user buys 4 pieces of canada goose cabans
-(r/put-item-in-cart db "bariscan" "canada goose" 4)
-(r/sell-all-items-in-cart db conn)
-
-
-;10. ## user return products page
-;   ## products page!
-(r/show-all-products db)
-;=> 4
-
-;11. ## user buys 5 pieces of husky sleeping bags while there are no enough stocks
-(r/put-item-in-cart db "bariscan" "husky" 5)
-;OUT OF STOCK!!
-;    Stock size is:  4=> #'T01/db
-;=> 4
-
-(r/show-all-products db)
-
-;12. return products page and get put multiple items into the cart and then buy them.
-
-(r/put-item-in-cart db "bariscan" "husky" 2)
-(r/put-item-in-cart db "bariscan" "canada goose" 3)
-(r/put-item-in-cart db "bariscan" "mammut" 1)
-(r/put-item-in-cart db "bariscan" "lacoste" 7)
-
-
-(r/show-all-products db)
-
-(r/sell-all-items-in-cart db conn)
-;=> []
-
-(r/show-all-products db)
