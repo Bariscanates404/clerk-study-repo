@@ -1,4 +1,4 @@
-(ns db_unique_problem)
+(ns db_unique_solution)
 
 (require '[datomic.client.api :as d])
 (def client (d/client {:server-type :dev-local
