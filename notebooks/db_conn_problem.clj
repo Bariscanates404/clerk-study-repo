@@ -1,4 +1,4 @@
-(ns db_unique_solution)
+(ns db_conn_problem)
 
 (require '[datomic.client.api :as d])
 (def client (d/client {:server-type :dev-local
@@ -17,20 +17,17 @@
     :db/valueType   :db.type/long
     :db/cardinality :db.cardinality/one}])
 (d/transact conn {:tx-data db-schema})
-(def db (d/db conn))                                        ;;refresh database
 
 (def item1
   [{:item/name "String"
     :item/sum  0}
    ])
 (d/transact conn {:tx-data item1})
-(def db (d/db conn))                                        ;;refresh database
 
 (def item2
   [{:item/name    "String"
     :item/sum 10}])
 (d/transact conn {:tx-data item2})
-(def db (d/db conn))                                       ;;refresh database
 
 (d/q
   '[:find ?sum
