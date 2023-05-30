@@ -1,9 +1,0 @@
-<component name="libraryTable">
-  <library name="Deps: datascript:1.3.12">
-    <CLASSES>
-      <root url="jar://$MAVEN_REPOSITORY$/datascript/datascript/1.3.12/datascript-1.3.12.jar!/" />
-    </CLASSES>
-    <JAVADOC />
-    <SOURCES />
-  </library>
-</component>

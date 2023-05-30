@@ -1,9 +1,0 @@
-<component name="libraryTable">
-  <library name="Deps: io.github.nextjournal/clerk:0.13.842">
-    <CLASSES>
-      <root url="jar://$MAVEN_REPOSITORY$/io/github/nextjournal/clerk/0.13.842/clerk-0.13.842.jar!/" />
-    </CLASSES>
-    <JAVADOC />
-    <SOURCES />
-  </library>
-</component>
