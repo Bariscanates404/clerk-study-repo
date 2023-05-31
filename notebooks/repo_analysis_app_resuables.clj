@@ -1,10 +1,7 @@
-(ns repo-analysis-app-resuables
-  (:require [datomic.client.api :as d]
-            ))
+(ns repo-analysis-app-resuables)
 (require
   '[clojure.data.csv :as csv]
   '[clojure.java.io :as io]
-  '[T02 :as ap]
   )
 (defn regex-file-seq
   "filters directories based regex exp"

@@ -1,6 +1,5 @@
 (ns T01
   (:require
-    [clojure.string :as s]
     [nextjournal.clerk :as clerk]
     [shop_app_reusables :as r]
     )
