@@ -25,42 +25,6 @@
 
 
 
-(identity coll)
-
-(prn
-  (frequencies
-    (filter
-      #{ 'reduce-kv 'str-paths 'vals 'acc}
-      (tree-seq (some-fn list? vector? map?) seq (read-string "reduce-kv")))))
-
-
-
-
-
-
-
-
-(macroexpand-1 '(->> (read-string "") ; `s` is from your example
-                    (tree-seq (some-fn list? vector? map?) seq) ; "flatten" the tree
-                    (filter #{'vals 'acc 'reduce-kv 'str-paths}) ; only pick symbols with the names map or acc
-                    (frequencies)
-                    (prn))
-
-               )
-
-
-
-
-(prn
-  (frequencies
-    (filter
-      #{ 'reduce-kv 'str-paths 'vals 'acc}
-      (tree-seq (some-fn list? vector? map?) seq (read-string "reduce-kv")))))
-
-
-
-
-
 
 
 
@@ -108,4 +72,10 @@
      (filter (ana-var=-fn 'clojure.core/map))
      (count))
 ; ⇒ 2
+
+
+
+
+
+;--------
 
