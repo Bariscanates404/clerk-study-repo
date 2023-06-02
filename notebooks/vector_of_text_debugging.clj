@@ -1,37 +1,6 @@
 (ns vector-of-text-debugging
   (:require [clojure.tools.analyzer.jvm :as ana]))
 
-(defn regex-file-seq
-  "Lazily filter a directory based on a regex."
-  [re dir]
-  (filter #(re-find re (.getPath %)) (file-seq dir)))
-
-(mapv
-  (fn [file] {:name (.getName file), :content (slurp file)})
-  (filter
-    (fn [file] (not (.isDirectory file)))
-    (regex-file-seq #".*\.clj" (clojure.java.io/file "/Users/bariscanates/prj/electric/src/study/PostwalkDataStructures/Shining_data_structure_for_walk.clj"))))
-
-
-
-
-(def f (fn [file] {:name (.getName file), :content (slurp file)}))
-
-(def coll (filter
-            (fn [file] (not (.isDirectory file)))
-            (regex-file-seq #".*\.(clj[cs]?)$" (clojure.java.io/file "/Users/bariscanates/prj/electric/src/study/VeriAnalizProblemleri/D07c_volatile!_approach.clj"))))
-
-;mapv function collection imzası ile çalışıyor.
-
-
-
-
-
-
-
-
-
-
 
 (defn ana-branch?
   "tree-seq branch? predicate for clojure.tools.analyzer.jmv/analyze"
@@ -61,11 +30,12 @@
 
 ; ---
 
-(->> '(->>
-        [{:a 1}]
-        (map (fn [map]
-               (update map :a vector)))
-        (mapcat (partial (comp (partial map inc) :a))))
+
+
+(->>  '(loop [result [] x 5]
+        (if (zero? x)
+          result
+          (recur (map result x) (dec x))))
 
      (ana/analyze)
      (ana-tree-seq)
@@ -78,4 +48,3 @@
 
 
 ;--------
-

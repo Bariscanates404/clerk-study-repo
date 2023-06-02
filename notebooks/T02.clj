@@ -2,7 +2,6 @@
 (require '[datomic.client.api :as d]
          '[clojure.data.csv :as csv]
          '[clojure.java.io :as io]
-         '[repo-analysis-app-resuables :as r]
          )
 (def client (d/client {:server-type :dev-local
                        :storage-dir :mem
@@ -49,11 +48,18 @@
                "when" "when-first" "when-let" "when-not" "when-some" "while" "with-bindings*" "with-bindings" "with-in-str" "with-local-vars" "with-meta" "with-open" "with-out-str" "with-local-vars" "with-meta" "with-open" "with-precision" "with-redefs-fn" "with-redefs"
                "xml-seq" "zero?" "zipmap"])
 
+(def db (d/db conn))
+(defn regex-file-seq
+  "filters directories based regex exp"
+  [regex dir]
+  (filter #(re-find regex (.getPath %)) (file-seq dir)))
+
+
 (defn add-a-type-into-schema "adds just one item in functions schema" [type-str]
   (d/transact conn {:tx-data [{:function/name type-str
-                               :function/sum  0
-                               }
-                              ]})
+                                  :function/sum  0
+                                  }
+                                 ]})
   (def db (d/db conn))
   )
 
@@ -64,20 +70,26 @@
            )
          )
   )
+
 (create-type-schema type-vec)
-(def vector-0f-texts "gets all the project files and return them as map of strings"
-  (mapv
-    (fn [file] {:name (.getName file), :content (slurp file)})
-    (filter
-      (fn [file] (not (.isDirectory file)))
-      (r/regex-file-seq #".*\.(clj[cs]?)$" (clojure.java.io/file "/Users/bariscanates/study/clj"))))
-  )
+
 (def !type "helps to run increase-usages function inside of main functions for loop"
   (atom ["String"])
   )
 (defn f "searchs the given value(inside !type atom) inside given text(vector-0f-texts)"
   [text]
   (count (re-seq (re-pattern (str "\\Q" (get @!type 0) "\\E" "[^a-zA-Z0-9*+!\\-_'?]")) text)))
+
+
+(def vector-0f-texts "gets all the project files and return them as map of strings"
+  (mapv
+    (fn [file] {:name (.getName file), :content (slurp file)})
+    (filter
+      (fn [file] (not (.isDirectory file)))
+      (regex-file-seq #".*\.(clj[cs]?)$" (clojure.java.io/file "/Users/bariscanates/repostoanalysis/"))))
+  )
+
+
 (defn function-usages "shows  the number of given functions usages which are saved db until now on"
   [func-name]
   (ffirst (d/q
@@ -88,15 +100,19 @@
               [?e :function/sum ?name]]
             db func-name))
   )
+
 (defn increase-usages "counts the usage sum of given function name and writes into the db the sum of old and new usage numbers"
   [func-name-string func-usage-to-sum]
   (def db (d/db conn))
   (d/transact conn {:tx-data [{:function/name func-name-string
-                               :function/sum  (+ (function-usages func-name-string) func-usage-to-sum)}
-                              ]})
+                                  :function/sum  (+ (function-usages func-name-string) func-usage-to-sum)}
+                                 ]})
   (def db (d/db conn))
   )
-(defn main-function "checks all of given function(by function type vector) usages into given project and writes their sum into db"
+
+
+
+(defn main-function "checks all given function(by function type vector) usages into given project and writes their sum into db"
   [type-coll]
   (doall (for [len (range 0 (count type-coll))]
            (do
@@ -107,6 +123,7 @@
          )
   )
 (main-function type-vec)
+
 (def all-func-usages "returns all saved function usages into db"
   (reverse (->> (d/q
                   '[:find ?func-name ?sum
@@ -120,5 +137,15 @@
   )
 (def result-page
   (into [] all-func-usages))
-(r/create-cvs result-page)
+
+(defn create-csv "creates and writes given data into a cvs file"
+  [res-vec]
+  (for [len (range 0 (count res-vec))]
+    (with-open [writer (io/writer "tmp/foo.csv" :append true)]
+      (csv/write-csv writer [[(str (str (+ len 1) "-") (str "      " (str (get (get res-vec len) 0))) (str "      " (get (get res-vec len) 1)))]])
+      )
+    )
+  )
+
+(create-csv result-page)
 (println (slurp "tmp/foo.csv"))
